@@ -15,20 +15,22 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.cache.disc;
 
-import java.io.File;
-
 import com.nostra13.universalimageloader.cache.disc.naming.FileNameGenerator;
 import com.nostra13.universalimageloader.core.DefaultConfigurationFactory;
 
+import java.io.File;
+
 /**
  * Base disc cache. Implements common functionality for disc cache.
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
- * @since 1.0.0
  * @see DiscCacheAware
  * @see FileNameGenerator
+ * @since 1.0.0
  */
 public abstract class BaseDiscCache implements DiscCacheAware {
+
+	private static final String ERROR_ARG_NULL = "\"%s\" argument must be not null";
 
 	protected File cacheDir;
 
@@ -39,6 +41,13 @@ public abstract class BaseDiscCache implements DiscCacheAware {
 	}
 
 	public BaseDiscCache(File cacheDir, FileNameGenerator fileNameGenerator) {
+		if (cacheDir == null) {
+			throw new IllegalArgumentException("cacheDir" + ERROR_ARG_NULL);
+		}
+		if (fileNameGenerator == null) {
+			throw new IllegalArgumentException("fileNameGenerator" + ERROR_ARG_NULL);
+		}
+
 		this.cacheDir = cacheDir;
 		this.fileNameGenerator = fileNameGenerator;
 	}

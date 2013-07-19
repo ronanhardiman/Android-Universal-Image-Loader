@@ -15,59 +15,69 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core;
 
-import static com.nostra13.universalimageloader.core.ImageLoader.LOG_DISPLAY_IMAGE_IN_IMAGEVIEW;
-import static com.nostra13.universalimageloader.core.ImageLoader.LOG_TASK_CANCELLED;
 import android.graphics.Bitmap;
 import android.widget.ImageView;
-
 import com.nostra13.universalimageloader.core.assist.ImageLoadingListener;
+import com.nostra13.universalimageloader.core.assist.LoadedFrom;
 import com.nostra13.universalimageloader.core.display.BitmapDisplayer;
 import com.nostra13.universalimageloader.utils.L;
 
+import java.lang.ref.Reference;
+
 /**
  * Displays bitmap in {@link ImageView}. Must be called on UI thread.
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
- * @since 1.3.1
  * @see ImageLoadingListener
  * @see BitmapDisplayer
+ * @since 1.3.1
  */
 final class DisplayBitmapTask implements Runnable {
 
+	private static final String LOG_DISPLAY_IMAGE_IN_IMAGEVIEW = "Display image in ImageView (loaded from %1$s) [%2$s]";
+	private static final String LOG_TASK_CANCELLED_IMAGEVIEW_REUSED = "ImageView is reused for another image. Task is cancelled. [%s]";
+	private static final String LOG_TASK_CANCELLED_IMAGEVIEW_LOST = "ImageView was collected by GC. Task is cancelled. [%s]";
+
 	private final Bitmap bitmap;
 	private final String imageUri;
-	private final ImageView imageView;
+	private final Reference<ImageView> imageViewRef;
 	private final String memoryCacheKey;
 	private final BitmapDisplayer displayer;
 	private final ImageLoadingListener listener;
 	private final ImageLoaderEngine engine;
+	private final LoadedFrom loadedFrom;
 
 	private boolean loggingEnabled;
 
-	public DisplayBitmapTask(Bitmap bitmap, ImageLoadingInfo imageLoadingInfo, ImageLoaderEngine engine) {
+	public DisplayBitmapTask(Bitmap bitmap, ImageLoadingInfo imageLoadingInfo, ImageLoaderEngine engine, LoadedFrom loadedFrom) {
 		this.bitmap = bitmap;
 		imageUri = imageLoadingInfo.uri;
-		imageView = imageLoadingInfo.imageView;
+		imageViewRef = imageLoadingInfo.imageViewRef;
 		memoryCacheKey = imageLoadingInfo.memoryCacheKey;
 		displayer = imageLoadingInfo.options.getDisplayer();
 		listener = imageLoadingInfo.listener;
 		this.engine = engine;
+		this.loadedFrom = loadedFrom;
 	}
 
 	public void run() {
-		if (isViewWasReused()) {
-			if (loggingEnabled) L.i(LOG_TASK_CANCELLED, memoryCacheKey);
+		ImageView imageView = imageViewRef.get();
+		if (imageView == null) {
+			if (loggingEnabled) L.d(LOG_TASK_CANCELLED_IMAGEVIEW_LOST, memoryCacheKey);
+			listener.onLoadingCancelled(imageUri, imageView);
+		} else if (isViewWasReused(imageView)) {
+			if (loggingEnabled) L.d(LOG_TASK_CANCELLED_IMAGEVIEW_REUSED, memoryCacheKey);
 			listener.onLoadingCancelled(imageUri, imageView);
 		} else {
-			if (loggingEnabled) L.i(LOG_DISPLAY_IMAGE_IN_IMAGEVIEW, memoryCacheKey);
-			Bitmap displayedBitmap = displayer.display(bitmap, imageView);
+			if (loggingEnabled) L.d(LOG_DISPLAY_IMAGE_IN_IMAGEVIEW, loadedFrom, memoryCacheKey);
+			Bitmap displayedBitmap = displayer.display(bitmap, imageView, loadedFrom);
 			listener.onLoadingComplete(imageUri, imageView, displayedBitmap);
 			engine.cancelDisplayTaskFor(imageView);
 		}
 	}
 
 	/** Checks whether memory cache key (image URI) for current ImageView is actual */
-	private boolean isViewWasReused() {
+	private boolean isViewWasReused(ImageView imageView) {
 		String currentCacheKey = engine.getLoadingUriForView(imageView);
 		return !memoryCacheKey.equals(currentCacheKey);
 	}
