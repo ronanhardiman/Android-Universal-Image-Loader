@@ -15,36 +15,34 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core.assist;
 
+import android.graphics.Bitmap;
+import com.nostra13.universalimageloader.cache.memory.MemoryCacheAware;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import android.graphics.Bitmap;
-
-import com.nostra13.universalimageloader.cache.memory.MemoryCacheAware;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-
 /**
  * Utility for generating of keys for memory cache, key comparing and other work with memory cache
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
  * @since 1.6.3
  */
 public final class MemoryCacheUtil {
 
 	private static final String URI_AND_SIZE_SEPARATOR = "_";
-	private static final String MEMORY_CACHE_KEY_FORMAT = "%1$s" + URI_AND_SIZE_SEPARATOR + "%2$dx%3$d";
+	private static final String WIDTH_AND_HEIGHT_SEPARATOR = "x";
 
 	private MemoryCacheUtil() {
 	}
 
 	/**
 	 * Generates key for memory cache for incoming image (URI + size).<br />
-	 * Pattern for cache key - {@value #MEMORY_CACHE_KEY_FORMAT}, where (1) - image URI, (2) - image width, (3) - image
-	 * height.
+	 * Pattern for cache key - <b>[imageUri]_[width]x[height]</b>.
 	 */
 	public static String generateKey(String imageUri, ImageSize targetSize) {
-		return String.format(MEMORY_CACHE_KEY_FORMAT, imageUri, targetSize.getWidth(), targetSize.getHeight());
+		return new StringBuilder(imageUri).append(URI_AND_SIZE_SEPARATOR).append(targetSize.getWidth()).append(WIDTH_AND_HEIGHT_SEPARATOR).append(targetSize.getHeight()).toString();
 	}
 
 	public static Comparator<String> createFuzzyKeyComparator() {

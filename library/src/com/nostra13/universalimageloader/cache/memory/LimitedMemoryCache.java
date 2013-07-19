@@ -15,11 +15,12 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.cache.memory;
 
+import com.nostra13.universalimageloader.utils.L;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.nostra13.universalimageloader.utils.L;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Limited cache. Provides object storing. Size of all stored bitmaps will not to exceed size limit (
@@ -27,10 +28,10 @@ import com.nostra13.universalimageloader.utils.L;
  * <br />
  * <b>NOTE:</b> This cache uses strong and weak references for stored Bitmaps. Strong references - for limited count of
  * Bitmaps (depends on cache size), weak references - for all other cached Bitmaps.
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
- * @since 1.0.0
  * @see BaseMemoryCache
+ * @since 1.0.0
  */
 public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 
@@ -39,7 +40,7 @@ public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 
 	private final int sizeLimit;
 
-	private int cacheSize = 0;
+	private final AtomicInteger cacheSize;
 
 	/**
 	 * Contains strong references to stored objects. Each next object is added last. If hard cache size will exceed
@@ -48,11 +49,10 @@ public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 	 */
 	private final List<V> hardCache = Collections.synchronizedList(new LinkedList<V>());
 
-	/**
-	 * @param sizeLimit Maximum size for cache (in bytes)
-	 */
+	/** @param sizeLimit Maximum size for cache (in bytes) */
 	public LimitedMemoryCache(int sizeLimit) {
 		this.sizeLimit = sizeLimit;
+		cacheSize = new AtomicInteger();
 		if (sizeLimit > MAX_NORMAL_CACHE_SIZE) {
 			L.w("You set too large memory cache size (more than %1$d Mb)", MAX_NORMAL_CACHE_SIZE_IN_MB);
 		}
@@ -64,15 +64,16 @@ public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 		// Try to add value to hard cache
 		int valueSize = getSize(value);
 		int sizeLimit = getSizeLimit();
+		int curCacheSize = cacheSize.get();
 		if (valueSize < sizeLimit) {
-			while (cacheSize + valueSize > sizeLimit) {
+			while (curCacheSize + valueSize > sizeLimit) {
 				V removedValue = removeNext();
 				if (hardCache.remove(removedValue)) {
-					cacheSize -= getSize(removedValue);
+					curCacheSize = cacheSize.addAndGet(-getSize(removedValue));
 				}
 			}
 			hardCache.add(value);
-			cacheSize += valueSize;
+			cacheSize.addAndGet(valueSize);
 
 			putSuccessfully = true;
 		}
@@ -86,7 +87,7 @@ public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 		V value = super.get(key);
 		if (value != null) {
 			if (hardCache.remove(value)) {
-				cacheSize -= getSize(value);
+				cacheSize.addAndGet(-getSize(value));
 			}
 		}
 		super.remove(key);
@@ -95,7 +96,7 @@ public abstract class LimitedMemoryCache<K, V> extends BaseMemoryCache<K, V> {
 	@Override
 	public void clear() {
 		hardCache.clear();
-		cacheSize = 0;
+		cacheSize.set(0);
 		super.clear();
 	}
 

@@ -19,10 +19,11 @@ import android.graphics.Bitmap;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
+import com.nostra13.universalimageloader.core.assist.LoadedFrom;
 
 /**
  * Displays image with "fade in" animation
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
  * @since 1.6.4
  */
@@ -35,7 +36,7 @@ public class FadeInBitmapDisplayer implements BitmapDisplayer {
 	}
 
 	@Override
-	public Bitmap display(Bitmap bitmap, ImageView imageView) {
+	public Bitmap display(Bitmap bitmap, ImageView imageView, LoadedFrom loadedFrom) {
 		imageView.setImageBitmap(bitmap);
 
 		animate(imageView, durationMillis);
@@ -45,8 +46,8 @@ public class FadeInBitmapDisplayer implements BitmapDisplayer {
 
 	/**
 	 * Animates {@link ImageView} with "fade-in" effect
-	 * 
-	 * @param imageView {@link ImageView} which display image in
+	 *
+	 * @param imageView      {@link ImageView} which display image in
 	 * @param durationMillis The length of the animation in milliseconds
 	 */
 	public static void animate(ImageView imageView, int durationMillis) {
@@ -55,5 +56,4 @@ public class FadeInBitmapDisplayer implements BitmapDisplayer {
 		fadeImage.setInterpolator(new DecelerateInterpolator());
 		imageView.startAnimation(fadeImage);
 	}
-
 }

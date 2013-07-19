@@ -16,8 +16,10 @@
 package com.nostra13.universalimageloader.core;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory.Options;
+import android.os.Handler;
 import android.widget.ImageView;
-
+import com.nostra13.universalimageloader.core.assist.ImageLoadingListener;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.display.BitmapDisplayer;
 import com.nostra13.universalimageloader.core.display.SimpleBitmapDisplayer;
@@ -34,14 +36,14 @@ import com.nostra13.universalimageloader.core.process.BitmapProcessor;
  * <li>whether loaded image will be cached in memory</li>
  * <li>whether loaded image will be cached on disc</li>
  * <li>image scale type</li>
- * <li>bitmap decoding configuration</li>
+ * <li>decoding options (including bitmap decoding configuration)</li>
  * <li>delay before loading of image</li>
- * <li>auxiliary object which will be passed to {@link ImageDownloader#getStream(java.net.URI, Object) ImageDownloader}</li>
+ * <li>auxiliary object which will be passed to {@link ImageDownloader#getStream(String, Object) ImageDownloader}</li>
  * <li>pre-processor for image Bitmap (before caching in memory)</li>
  * <li>post-processor for image Bitmap (after caching in memory, before displaying)</li>
  * <li>how decoded {@link Bitmap} will be displayed</li>
  * </ul>
- * 
+ * <p/>
  * You can create instance:
  * <ul>
  * <li>with {@link Builder}:<br />
@@ -50,7 +52,7 @@ import com.nostra13.universalimageloader.core.process.BitmapProcessor;
  * {@link Builder#showStubImage(int) showStubImage()}.{@link Builder#build() build()}</code><br />
  * </li>
  * <li>or by static method: {@link #createSimple()}</li> <br />
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
  * @since 1.0.0
  */
@@ -63,12 +65,13 @@ public final class DisplayImageOptions {
 	private final boolean cacheInMemory;
 	private final boolean cacheOnDisc;
 	private final ImageScaleType imageScaleType;
-	private final Bitmap.Config bitmapConfig;
+	private final Options decodingOptions;
 	private final int delayBeforeLoading;
 	private final Object extraForDownloader;
 	private final BitmapProcessor preProcessor;
 	private final BitmapProcessor postProcessor;
 	private final BitmapDisplayer displayer;
+	private final Handler handler;
 
 	private DisplayImageOptions(Builder builder) {
 		stubImage = builder.stubImage;
@@ -78,93 +81,98 @@ public final class DisplayImageOptions {
 		cacheInMemory = builder.cacheInMemory;
 		cacheOnDisc = builder.cacheOnDisc;
 		imageScaleType = builder.imageScaleType;
-		bitmapConfig = builder.bitmapConfig;
+		decodingOptions = builder.decodingOptions;
 		delayBeforeLoading = builder.delayBeforeLoading;
 		extraForDownloader = builder.extraForDownloader;
 		preProcessor = builder.preProcessor;
 		postProcessor = builder.postProcessor;
 		displayer = builder.displayer;
+		handler = builder.handler;
 	}
 
-	boolean shouldShowStubImage() {
+	public boolean shouldShowStubImage() {
 		return stubImage != 0;
 	}
 
-	boolean shouldShowImageForEmptyUri() {
+	public boolean shouldShowImageForEmptyUri() {
 		return imageForEmptyUri != 0;
 	}
 
-	boolean shouldShowImageOnFail() {
+	public boolean shouldShowImageOnFail() {
 		return imageOnFail != 0;
 	}
 
-	boolean shouldPreProcess() {
+	public boolean shouldPreProcess() {
 		return preProcessor != null;
 	}
 
-	boolean shouldPostProcess() {
+	public boolean shouldPostProcess() {
 		return postProcessor != null;
 	}
 
-	boolean shouldDelayBeforeLoading() {
+	public boolean shouldDelayBeforeLoading() {
 		return delayBeforeLoading > 0;
 	}
 
-	int getStubImage() {
+	public int getStubImage() {
 		return stubImage;
 	}
 
-	int getImageForEmptyUri() {
+	public int getImageForEmptyUri() {
 		return imageForEmptyUri;
 	}
 
-	int getImageOnFail() {
+	public int getImageOnFail() {
 		return imageOnFail;
 	}
 
-	boolean isResetViewBeforeLoading() {
+	public boolean isResetViewBeforeLoading() {
 		return resetViewBeforeLoading;
 	}
 
-	boolean isCacheInMemory() {
+	public boolean isCacheInMemory() {
 		return cacheInMemory;
 	}
 
-	boolean isCacheOnDisc() {
+	public boolean isCacheOnDisc() {
 		return cacheOnDisc;
 	}
 
-	ImageScaleType getImageScaleType() {
+	public ImageScaleType getImageScaleType() {
 		return imageScaleType;
 	}
 
-	Bitmap.Config getBitmapConfig() {
-		return bitmapConfig;
+	public Options getDecodingOptions() {
+		return decodingOptions;
 	}
 
-	int getDelayBeforeLoading() {
+	public int getDelayBeforeLoading() {
 		return delayBeforeLoading;
 	}
 
-	Object getExtraForDownloader() {
+	public Object getExtraForDownloader() {
 		return extraForDownloader;
 	}
 
-	BitmapProcessor getPreProcessor() {
+	public BitmapProcessor getPreProcessor() {
 		return preProcessor;
 	}
 
-	BitmapProcessor getPostProcessor() {
+	public BitmapProcessor getPostProcessor() {
 		return postProcessor;
 	}
 
-	BitmapDisplayer getDisplayer() {
+	public BitmapDisplayer getDisplayer() {
 		return displayer;
+	}
+
+	public Handler getHandler() {
+		return (handler == null ? new Handler() : handler);
 	}
 
 	/**
 	 * Builder for {@link DisplayImageOptions}
-	 * 
+	 *
 	 * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
 	 */
 	public static class Builder {
@@ -175,16 +183,22 @@ public final class DisplayImageOptions {
 		private boolean cacheInMemory = false;
 		private boolean cacheOnDisc = false;
 		private ImageScaleType imageScaleType = ImageScaleType.IN_SAMPLE_POWER_OF_2;
-		private Bitmap.Config bitmapConfig = Bitmap.Config.ARGB_8888;
+		private Options decodingOptions = new Options();
 		private int delayBeforeLoading = 0;
 		private Object extraForDownloader = null;
 		private BitmapProcessor preProcessor = null;
 		private BitmapProcessor postProcessor = null;
 		private BitmapDisplayer displayer = DefaultConfigurationFactory.createBitmapDisplayer();
+		private Handler handler = null;
+
+		public Builder() {
+			decodingOptions.inPurgeable = true;
+			decodingOptions.inInputShareable = true;
+		}
 
 		/**
 		 * Stub image will be displayed in {@link android.widget.ImageView ImageView} during image loading
-		 * 
+		 *
 		 * @param stubImageRes Stub image resource
 		 */
 		public Builder showStubImage(int stubImageRes) {
@@ -195,7 +209,7 @@ public final class DisplayImageOptions {
 		/**
 		 * Incoming image will be displayed in {@link android.widget.ImageView ImageView} if empty URI (null or empty
 		 * string) will be passed to <b>ImageLoader.displayImage(...)</b> method.
-		 * 
+		 *
 		 * @param imageRes Image resource
 		 */
 		public Builder showImageForEmptyUri(int imageRes) {
@@ -206,7 +220,7 @@ public final class DisplayImageOptions {
 		/**
 		 * Incoming image will be displayed in {@link android.widget.ImageView ImageView} if some error occurs during
 		 * requested image loading/decoding.
-		 * 
+		 *
 		 * @param imageRes Image resource
 		 */
 		public Builder showImageOnFail(int imageRes) {
@@ -214,27 +228,57 @@ public final class DisplayImageOptions {
 			return this;
 		}
 
-		/** {@link android.widget.ImageView ImageView} will be reset (set <b>null</b>) before image loading start */
+		/**
+		 * {@link android.widget.ImageView ImageView} will be reset (set <b>null</b>) before image loading start
+		 *
+		 * @deprecated Use {@link #resetViewBeforeLoading(boolean) resetViewBeforeLoading(true)} instead
+		 */
 		public Builder resetViewBeforeLoading() {
 			resetViewBeforeLoading = true;
 			return this;
 		}
 
-		/** Loaded image will be cached in memory */
+		/** Sets whether {@link android.widget.ImageView ImageView} will be reset (set <b>null</b>) before image loading start */
+		public Builder resetViewBeforeLoading(boolean resetViewBeforeLoading) {
+			this.resetViewBeforeLoading = resetViewBeforeLoading;
+			return this;
+		}
+
+		/**
+		 * Loaded image will be cached in memory
+		 *
+		 * @deprecated Use {@link #cacheInMemory(boolean) cacheInMemory(true)} instead
+		 */
 		public Builder cacheInMemory() {
 			cacheInMemory = true;
 			return this;
 		}
 
-		/** Loaded image will be cached on disc */
+		/** Sets whether loaded image will be cached in memory */
+		public Builder cacheInMemory(boolean cacheInMemory) {
+			this.cacheInMemory = cacheInMemory;
+			return this;
+		}
+
+		/**
+		 * Loaded image will be cached on disc
+		 *
+		 * @deprecated Use {@link #cacheOnDisc(boolean) cacheOnDisc(true)} instead
+		 */
 		public Builder cacheOnDisc() {
 			cacheOnDisc = true;
 			return this;
 		}
 
+		/** Sets whether loaded image will be cached on disc */
+		public Builder cacheOnDisc(boolean cacheOnDisc) {
+			this.cacheOnDisc = cacheOnDisc;
+			return this;
+		}
+
 		/**
-		 * Sets {@link ImageScaleType decoding type} for image loading task. Default value -
-		 * {@link ImageScaleType#POWER_OF_2}
+		 * Sets {@linkplain ImageScaleType scale type} for decoding image. This parameter is used while define scale
+		 * size for decoding image to Bitmap. Default value - {@link ImageScaleType#IN_SAMPLE_POWER_OF_2}
 		 */
 		public Builder imageScaleType(ImageScaleType imageScaleType) {
 			this.imageScaleType = imageScaleType;
@@ -243,7 +287,22 @@ public final class DisplayImageOptions {
 
 		/** Sets {@link Bitmap.Config bitmap config} for image decoding. Default value - {@link Bitmap.Config#ARGB_8888} */
 		public Builder bitmapConfig(Bitmap.Config bitmapConfig) {
-			this.bitmapConfig = bitmapConfig;
+			if (bitmapConfig == null) throw new IllegalArgumentException("bitmapConfig can't be null");
+			decodingOptions.inPreferredConfig = bitmapConfig;
+			return this;
+		}
+
+		/**
+		 * Sets options for image decoding.<br />
+		 * <b>NOTE:</b> {@link Options#inSampleSize} of incoming options will <b>NOT</b> be considered. Library
+		 * calculate the most appropriate sample size itself according yo {@link #imageScaleType(ImageScaleType)}
+		 * options.<br />
+		 * <b>NOTE:</b> This option overlaps {@link #bitmapConfig(android.graphics.Bitmap.Config) bitmapConfig()}
+		 * option.
+		 */
+		public Builder decodingOptions(Options decodingOptions) {
+			if (decodingOptions == null) throw new IllegalArgumentException("decodingOptions can't be null");
+			this.decodingOptions = decodingOptions;
 			return this;
 		}
 
@@ -253,7 +312,7 @@ public final class DisplayImageOptions {
 			return this;
 		}
 
-		/** Sets auxiliary object which will be passed to {@link ImageDownloader#getStream(java.net.URI, Object)} */
+		/** Sets auxiliary object which will be passed to {@link ImageDownloader#getStream(String, Object)} */
 		public Builder extraForDownloader(Object extra) {
 			this.extraForDownloader = extra;
 			return this;
@@ -283,7 +342,17 @@ public final class DisplayImageOptions {
 		 * {@link DefaultConfigurationFactory#createBitmapDisplayer()}
 		 */
 		public Builder displayer(BitmapDisplayer displayer) {
+			if (displayer == null) throw new IllegalArgumentException("displayer can't be null");
 			this.displayer = displayer;
+			return this;
+		}
+
+		/**
+		 * Sets custom {@linkplain Handler handler} for displaying images and firing {@linkplain ImageLoadingListener
+		 * listener} events.
+		 */
+		public Builder handler(Handler handler) {
+			this.handler = handler;
 			return this;
 		}
 
@@ -296,12 +365,13 @@ public final class DisplayImageOptions {
 			cacheInMemory = options.cacheInMemory;
 			cacheOnDisc = options.cacheOnDisc;
 			imageScaleType = options.imageScaleType;
-			bitmapConfig = options.bitmapConfig;
+			decodingOptions = options.decodingOptions;
 			delayBeforeLoading = options.delayBeforeLoading;
 			extraForDownloader = options.extraForDownloader;
 			preProcessor = options.preProcessor;
 			postProcessor = options.postProcessor;
 			displayer = options.displayer;
+			handler = options.handler;
 			return this;
 		}
 
@@ -321,7 +391,7 @@ public final class DisplayImageOptions {
 	 * <li>{@link Bitmap.Config#ARGB_8888} bitmap config will be used for image decoding</li>
 	 * <li>{@link SimpleBitmapDisplayer} will be used for image displaying</li>
 	 * </ul>
-	 * 
+	 * <p/>
 	 * These option are appropriate for simple single-use image (from drawables or from Internet) displaying.
 	 */
 	public static DisplayImageOptions createSimple() {

@@ -15,16 +15,10 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core.display;
 
-import android.graphics.Bitmap;
+import android.graphics.*;
 import android.graphics.Bitmap.Config;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.widget.ImageView;
-
+import com.nostra13.universalimageloader.core.assist.LoadedFrom;
 import com.nostra13.universalimageloader.utils.L;
 
 /**
@@ -33,7 +27,7 @@ import com.nostra13.universalimageloader.utils.L;
  * (<i>layout_height</i>) .<br />
  * <b>NOTE:</b> New {@link Bitmap} object is created for displaying. So this class needs more memory and can cause
  * {@link OutOfMemoryError}.
- * 
+ *
  * @author Sergey Tarasevich (nostra13[at]gmail[dot]com)
  * @since 1.5.6
  */
@@ -46,7 +40,7 @@ public class RoundedBitmapDisplayer implements BitmapDisplayer {
 	}
 
 	@Override
-	public Bitmap display(Bitmap bitmap, ImageView imageView) {
+	public Bitmap display(Bitmap bitmap, ImageView imageView, LoadedFrom loadedFrom) {
 		Bitmap roundedBitmap = roundCorners(bitmap, imageView, roundPixels);
 		imageView.setImageBitmap(roundedBitmap);
 		return roundedBitmap;
@@ -55,9 +49,9 @@ public class RoundedBitmapDisplayer implements BitmapDisplayer {
 	/**
 	 * Process incoming {@linkplain Bitmap} to make rounded corners according to target {@link ImageView}.<br />
 	 * This method <b>doesn't display</b> result bitmap in {@link ImageView}
-	 * 
-	 * @param bitmap Incoming Bitmap to process
-	 * @param imageView Target {@link ImageView} to display bitmap in
+	 *
+	 * @param bitmap      Incoming Bitmap to process
+	 * @param imageView   Target {@link ImageView} to display bitmap in
 	 * @param roundPixels
 	 * @return Result bitmap with rounded corners
 	 */
@@ -126,8 +120,8 @@ public class RoundedBitmapDisplayer implements BitmapDisplayer {
 					x = (bw - srcWidth) / 2;
 					y = 0;
 				}
-				width = Math.min(vw, bw);
-				height = Math.min(vh, bh);
+				width = srcWidth;// Math.min(vw, bw);
+				height = srcHeight;//Math.min(vh, bh);
 				srcRect = new Rect(x, y, x + srcWidth, y + srcHeight);
 				destRect = new Rect(0, 0, width, height);
 				break;

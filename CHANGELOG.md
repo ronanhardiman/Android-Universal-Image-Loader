@@ -1,6 +1,78 @@
 Change Log
 ===
 
+v1.8.5 *(30.06.2013)*
+---
+ * **Changed API:** `ImageLoaderConfiguration.discCacheExtraOptions(...)` -> `ImageLoaderConfiguration.discCacheExtraOptions(..., BitmapProcessor)` ([#314](https://github.com/nostra13/Android-Universal-Image-Loader/issues/314))
+ * Introduce `ImageLoaderConfiguration.memoryCacheSizePercentage(int)` ([#279](https://github.com/nostra13/Android-Universal-Image-Loader/issues/279))
+ * Introduced `DisplayImageOptions.cacheInMemory(boolean)`, `.cacheOnDisc(boolean)`, `.resetViewBeforeLoading(boolean)` ([#252](https://github.com/nostra13/Android-Universal-Image-Loader/issues/252))
+ * Added `LoadedFrom` flag to `BitmapDisplayer.display(..., LoadedFrom)` about image source  ([#149](https://github.com/nostra13/Android-Universal-Image-Loader/issues/149), [#239](https://github.com/nostra13/Android-Universal-Image-Loader/issues/239))
+ * Added `L.disableLogging()` and `L.enableLogging()` to off/on logs completely ([#270](https://github.com/nostra13/Android-Universal-Image-Loader/issues/270))
+ * Prevent image decoding if image is reused ([#247](https://github.com/nostra13/Android-Universal-Image-Loader/issues/247))
+ * Not set cache dir on SD card if no appropriate permission ([#311](https://github.com/nostra13/Android-Universal-Image-Loader/issues/311))
+ * Increased buffer size for image downlaods (8 KB -> 32 KB) ([#249](https://github.com/nostra13/Android-Universal-Image-Loader/issues/249))
+ * Fixed bugs:
+   * Prevent recycling of cached in memory images ([#259](https://github.com/nostra13/Android-Universal-Image-Loader/issues/259))
+   * ConcurrentModificationException in `LruMemoryCache` ([#265](https://github.com/nostra13/Android-Universal-Image-Loader/issues/265))
+   * File counting if cached files disappeared `LimitedDiscCache` ([#316](https://github.com/nostra13/Android-Universal-Image-Loader/issues/316))    
+   * NPE for ImageView without LayoutParams ([#272](https://github.com/nostra13/Android-Universal-Image-Loader/issues/272))
+   * NPE in `LoadAndDisplayImageTask` ([#271](https://github.com/nostra13/Android-Universal-Image-Loader/issues/271))
+   * NPE in ImageLoaderEngine ([#301](https://github.com/nostra13/Android-Universal-Image-Loader/issues/301))
+   * RoundedBitmapDisplayer doesn't display round corner correctly for CENTER_CROP ([#315](https://github.com/nostra13/Android-Universal-Image-Loader/issues/315))
+
+v1.8.4 *(13.04.2013)*
+---
+ * Travis CI, added Unit tests ([#189](https://github.com/nostra13/Android-Universal-Image-Loader/issues/189))
+ * Introduced `DisplayImageOptions.handler(Handler)` ([#231](https://github.com/nostra13/Android-Universal-Image-Loader/issues/231))
+ * Fixed bugs:
+   * `ConcurrentModificationException` in `BaseMemoryCache` ([#229](https://github.com/nostra13/Android-Universal-Image-Loader/issues/229))
+   * `NullPointerException` in `LimitedDiscCache` ([#234](https://github.com/nostra13/Android-Universal-Image-Loader/issues/234))
+   * `NullPointerException` in `LruMemoryCache` ([#233](https://github.com/nostra13/Android-Universal-Image-Loader/issues/233))
+ * Improved work with Strings on UI thread ([#244](https://github.com/nostra13/Android-Universal-Image-Loader/issues/244))
+
+v1.8.3 *(31.03.2013)*
+---
+ * Android 2.0+ support
+ * Added EXIF orientation support ([#172](https://github.com/nostra13/Android-Universal-Image-Loader/issues/172))
+ * Introduced `ImageLoaderConfiguration.imageDecoder(ImageDecoder)`
+ * Introduced `DisplayImageOptions.decodingOptions(BitmapFactory.Options)`
+ * Handled disc cache non-availability
+ * Use `LruMemoryCache` as default memory cache for API >= 9, `LRULimitedMemoryCache` - for API < 9. Default memory cache size - 1/8 of available app memory.
+ * Improved `LimitedDiscCache` and `FuzzyKeyMemoryCache` performance
+ * Fixed bugs:
+    * `.denyCacheImageMultipleSizesInMemory` doesn't work if own memory cache is set
+	* `java.lang.NoSuchMethodError` in sample app ([#206](https://github.com/nostra13/Android-Universal-Image-Loader/issues/206))
+
+v1.8.2 *(13.03.2013)*
+---
+ * **Changed API:**
+   * `ImageDownloader.getStream***(URI, ...)` -> `ImageDownloader.getStream***(String, ...)`
+   * Made `FailReason` as a class instead of enum. Can be used in switches: `FailReason.getType()`
+   * Removed `ImageLoader.offOutOfMemoryHandling()`. ImageLoader doesn't handle OutOfMemoryError by default anymore (but still catches it for callbacks).
+ * Introduced `ImageLoader.taskExecutor(Executor)` and `ImageLoader.taskExecutorForCachedImages(Executor)` ([#187](https://github.com/nostra13/Android-Universal-Image-Loader/issues/187))
+ * Introduced `ImageLoader.destroy()`
+ * Handled SD card unmount ([#170](https://github.com/nostra13/Android-Universal-Image-Loader/issues/170))
+ * Added `Scheme` class
+ * Fixed bugs:
+   * problem of loading of local files with encoded symbols in path ([#179](https://github.com/nostra13/Android-Universal-Image-Loader/issues/179))
+   * minor mistake in `getImageSizeScaleTo()` method ([#200](https://github.com/nostra13/Android-Universal-Image-Loader/issues/200))
+   * possible concurrency issue in memory caches ([#116](https://github.com/nostra13/Android-Universal-Image-Loader/issues/116))
+   * wrong visibility of methods `ImageLoader.denyNetworkDownloads(boolean)` and `ImageLoader.handleSlowNetworks(boolean)` 
+
+v1.8.1 *(08.03.2013)*
+---
+ * **Changed API:**
+   * `ImageLoader.denyNetworkDownloads()` -> `ImageLoader.denyNetworkDownloads(true)`
+   * `ImageLoader.allowNetworkDownloads()` -> `ImageLoader.denyNetworkDownloads(false)`
+ * Introduced `ImageLoader.denyNetworkDownloads(boolean)`
+ * Introduced `ImageLoader.handleSlowNetwork(boolean)`. `FlushedInsputStream` isn't used for downloads by default.
+ * Handled HTTP(S) redirects
+ * Added `LruMemoryCache` (based on Android's LruCache), uses only strong references.
+ * Fixed `DisplayImageOptions.cloneFrom(...)` ([#173](https://github.com/nostra13/Android-Universal-Image-Loader/issues/173))
+ * Fixed ConcurrentModification issue in `MemoryCacheUtil. findCacheKeysForImageUri(...)` ([#174](https://github.com/nostra13/Android-Universal-Image-Loader/issues/174))
+ * Fixed issue "Disc Cache can't find image by URI with special/local UTF-8 characters"
+ * Improved calculation of target image size to scale (consider measured View width and height)
+
 v1.8.0 *(10.02.2013)*
 ---
  * **Changed API:**
